@@ -4,6 +4,18 @@
 
 公开仓库：https://github.com/vxggm/agent-workspace-open-source
 
+[项目官网](https://xn--agent666-df8sk40v.ddns.ge/) · [开源版下载](https://github.com/vxggm/agent-workspace-open-source/releases)
+
+## 人人可参与更新
+
+欢迎所有人 Fork、修改和发起 Pull Request，代码、文档、翻译与问题修复都欢迎。完整步骤见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
+- [提交修改 / Pull Requests](https://github.com/vxggm/agent-workspace-open-source/pulls)
+- [问题反馈 / Issues](https://github.com/vxggm/agent-workspace-open-source/issues)
+- [交流讨论 / Discussions](https://github.com/vxggm/agent-workspace-open-source/discussions)
+
+公开意味着所有人均可读取、克隆、Fork与提交贡献；原仓库直接推送权限由协作者角色控制，PR由维护者合并。
+
 下载版本：https://github.com/vxggm/agent-workspace-open-source/releases
 
 ## 目录范围
@@ -31,7 +43,7 @@ chmod +x gradlew
 ./gradlew :app:assembleDebug
 ```
 
-发布签名从用户自己的 `local.properties` 或 `SIGNING_STORE_FILE` / `SIGNING_STORE_PASSWORD` / `SIGNING_KEY_ALIAS` / `SIGNING_KEY_PASSWORD` 环境变量读取。当前副本未执行编译验证。仅做复制、脱敏、静态扫描和XML语法检查。
+发布签名从用户自己的 `local.properties` 或 `SIGNING_STORE_FILE` / `SIGNING_STORE_PASSWORD` / `SIGNING_KEY_ALIAS` / `SIGNING_KEY_PASSWORD` 环境变量读取。首发标签v5.2.2-open-source已通过GitHub Actions release/R8构建，APK签名与下载SHA已核验；功能按真机反馈继续迭代。
 
 ## 上游与许可
 
