@@ -256,6 +256,33 @@ class ApiConfigActivity : Activity() {
         }
         container.addView(fetchBtn)
 
+        // ---- 协议族选择 ----
+        // 决定请求路径、鉴权头与响应解析方式。老配置没有这个字段，默认 OpenAIChat。
+        val kinds = com.agentpad.workspace.ai.protocol.ProviderKind.entries.toTypedArray()
+        var pickedKind = com.agentpad.workspace.ai.protocol.ProviderKind.fromId(
+            profile.optString("provider"),
+        )
+        val kindLabel = TextView(this).apply {
+            text = "协议：${pickedKind.label}"
+            textSize = 13f
+            setTextColor(Color.parseColor("#3E6FA8"))
+            setPadding(0, dp(12), 0, dp(4))
+            setOnClickListener { v ->
+                AlertDialog.Builder(this@ApiConfigActivity)
+                    .setTitle("选择协议")
+                    .setItems(kinds.map { it.label }.toTypedArray()) { _, i ->
+                        pickedKind = kinds[i]
+                        (v as TextView).text = "协议：${pickedKind.label}"
+                        // URL 为空时顺手填该协议的默认地址
+                        if (urlField.text.toString().isBlank()) {
+                            urlField.setText(pickedKind.defaultBaseUrl)
+                        }
+                    }
+                    .show()
+            }
+        }
+        container.addView(kindLabel)
+
         AlertDialog.Builder(this)
             .setTitle("编辑配置")
             .setView(container)
@@ -268,7 +295,9 @@ class ApiConfigActivity : Activity() {
                     keyField.text.toString(),
                     modelField.text.toString()
                 )
-                status.text = "配置已保存"
+                // 协议单独存（老配置无此字段时为 OPENAI_CHAT）
+                ChatStore.setProfileProvider(this, profile.optString("id"), pickedKind.name)
+                status.text = "配置已保存（协议：${pickedKind.label}）"
                 renderProfiles()
             }
             .setNegativeButton("取消", null)

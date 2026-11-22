@@ -464,6 +464,26 @@ object ChatStore {
         }
     }
 
+    /**
+     * 保存协议的实现类型（OPENAI_CHAT / CLAUDE / GEMINI / ...）。
+     *
+     * 为什么不塞进 updateProfile 的参数列表：那会牵动所有调用点，
+     * 而协议是后加的可选项，独立一个方法改动面最小。
+     * 不设置时默认 OPENAI_CHAT —— 老配置无感升级。
+     */
+    fun setProfileProvider(context: Context, id: String, provider: String) {
+        val profiles = apiProfiles(context).toMutableList()
+        val idx = profiles.indexOfFirst { it.optString("id") == id }
+        if (idx >= 0) {
+            profiles[idx] = profiles[idx].put("provider", provider)
+            saveApiProfiles(context, profiles)
+        }
+    }
+
+    /** 读取当前生效配置的协议类型。 */
+    fun activeProviderKind(context: Context): String =
+        activeProfile(context).optString("provider").ifBlank { "OPENAI_CHAT" }
+
     private fun prefs(context: Context) = context.getSharedPreferences(PREF, Context.MODE_PRIVATE)
 
     // ---- API profiles (Operit-style multi-config) ----
@@ -954,6 +974,18 @@ object ChatStore {
         val current = loadSession(context, id) ?: return@withSessionLock false
         if (index < 0 || index > current.messages.size) return@withSessionLock false
         saveSession(context, current.copy(messages = current.messages.take(index)))
+        true
+    }
+
+    /**
+     * 清除聊天记录：只清空消息列表。
+     * 会话本身（id/标题/模式）、工作区文件、文件操作历史全部保留。
+     * 分片落盘会把多余 node_*.json 删掉，meta.json 保留 → 会话仍在列表里。
+     */
+    fun clearMessages(context: Context, id: String): Boolean = withSessionLock(id) {
+        val current = loadSession(context, id) ?: return@withSessionLock false
+        if (current.messages.isEmpty()) return@withSessionLock true
+        saveSession(context, current.copy(messages = emptyList()))
         true
     }
 

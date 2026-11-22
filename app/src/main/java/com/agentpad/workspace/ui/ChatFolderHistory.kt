@@ -266,8 +266,7 @@ fun ChatFolderMoveDialog(session: ChatStore.Session, onDismiss: () -> Unit, onMo
             error?.let { Text(it, color = AColors.Danger, fontSize = 12.sp) }
         } },
         confirmButton = { TextButton(onClick = {
-            if (com.agentpad.workspace.WorkingBubble.isShowing(session.id) ||
-                com.agentpad.workspace.floating.FloatingSessionHub.isBusy(session.id)) {
+            if (com.agentpad.workspace.floating.FloatingSessionHub.isBusy(session.id)) {
                 error = "请等当前任务结束后再移动对话"
             } else runCatching { ChatFolders.move(context, session.id, selected) }
                 .onSuccess { onMoved() }.onFailure { error = it.message }

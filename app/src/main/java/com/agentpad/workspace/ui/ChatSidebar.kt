@@ -64,6 +64,8 @@ data class SidebarActions(
     val onOpenVideoPreview: () -> Unit,
     /** Kotlin 项目：扫描当前 AI 工作区的 APK 并调系统安装器。 */
     val onInstallApk: () -> Unit,
+    /** 清除聊天记录：只删消息，保留会话本身与工作区文件。 */
+    val onClearChat: () -> Unit,
     val onOpenFloating: () -> Unit = {},
 )
 
@@ -176,6 +178,7 @@ fun AgentChatSidebar(
         SidebarRow(Icons.Outlined.History, "浏览 / 撤回 AI 操作", actions.onOpenFileHistory)
         SidebarRow(Icons.Outlined.EditNote, "本会话提示词", actions.onOpenPrompt)
         SidebarRow(Icons.Outlined.Label, "重新生成标题", actions.onRegenerateTitle)
+        SidebarRow(Icons.Outlined.DeleteOutline, "清除聊天记录", actions.onClearChat)
 
         // ---------- 项目专属 ----------
         if (state.mode == "web") {

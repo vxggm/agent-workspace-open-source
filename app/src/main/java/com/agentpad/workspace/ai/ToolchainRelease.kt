@@ -38,7 +38,7 @@ object ToolchainRelease {
 
     /** Release 资产直链的公共前半段 */
     private fun assetUrl(file: String): String =
-        "${MIRROR}https://example.com"
+        "${MIRROR}https://github.com/vxggm/agent-toolchain-arm64/releases/download/$TAG/$file"
 
     // ==================================================================
     // 包 1：JDK + Gradle + SDK 原生件 —— 能编纯 Java Android 工程

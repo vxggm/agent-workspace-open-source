@@ -26,7 +26,8 @@ class SubAgentRunner(
 
     companion object {
         const val MAX_CONCURRENCY = 4
-        private const val MAX_STEPS_LIMIT = 12
+        /** 子代理内部步数上限。放宽到 40：12 步跑不完真实的编译/扫描任务。 */
+        private const val MAX_STEPS_LIMIT = 40
         private const val MAX_SUB_RESULT = 6000
         private const val MAX_SUMMARY = 4000
         private val SELF_TOOLS = setOf("subagent_run", "subagent_parallel")

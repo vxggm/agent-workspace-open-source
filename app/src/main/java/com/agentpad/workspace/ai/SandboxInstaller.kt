@@ -17,7 +17,7 @@ object SandboxInstaller {
         "https://gh-proxy.com/https://raw.githubusercontent.com/debuerreotype/docker-debian-artifacts/dist-arm64v8/stable/slim/oci/blobs/rootfs.tar.gz"
     /** 小飞机网盘备用源（用户分享的 Debian ARM64 rootfs 镜像）。 */
     private const val DEBIAN_SLIM_FEIJI =
-        "https://example.com"
+        "https://share.feijipan.com/s/VQw8M1V9"
     private val DISTRO_SOURCES = listOf(DEBIAN_SLIM_PROXY, DEBIAN_SLIM_FEIJI)
 
     /** 可选下载源：id / 显示名 / 描述 / 地址。 */
@@ -58,14 +58,14 @@ object SandboxInstaller {
      *  顶层结构是 ./bin ./lib ./include（不是 astral 的 python/ 前缀），
      *  因此单独装到 usr/local/python316，绝不覆盖默认 python3。 */
     private const val PYTHON316_BUNDLE =
-        "https://example.com"
+        "https://gh-proxy.com/https://github.com/vxggm/cpython-aarch64-ci/releases/download/python-aarch64-3.16.0a2-r10/python-aarch64-custom.tar.gz"
 
     private const val PYTHON316_DIR = "usr/local/python316"
 
     /** Python 3.16 精简版（strip 过，11.9MB，含 include/pkgconfig/pip）。
      *  与上面的 full 包并存安装，互不覆盖。 */
     private const val PYTHON316_SLIM_BUNDLE =
-        "https://example.com"
+        "https://gh-proxy.com/https://github.com/vxggm/cpython-aarch64-ci/releases/download/python-aarch64-3.16.0a2-full/python-aarch64-full.tar.gz"
 
     private const val PYTHON316_SLIM_DIR = "usr/local/python316slim"
 

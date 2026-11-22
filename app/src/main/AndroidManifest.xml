@@ -11,6 +11,10 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- 对话小窗点「打开完整对话」时把原有 ChatActivity 所在 task 提到前台。
+         不重新 startActivity 就不会新建实例，本轮推理线程与其流式状态全保留。
+         REORDER_TASKS 是 normal 权限，安装即授予，无需运行时申请。 -->
+    <uses-permission android:name="android.permission.REORDER_TASKS" />
     <!-- 逆向模式：需要列出设备上已安装应用到 APK 路径 -->
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" tools:ignore="QueryAllPackagesPermission" />
     <!-- 插件系统：host.device 能力（按插件权限声明 + 运行时授权才生效） -->
@@ -77,14 +81,6 @@
         <activity android:name=".LogActivity" android:screenOrientation="portrait" android:exported="false" />
         <activity android:name=".AdbPermissionActivity" android:screenOrientation="portrait" android:exported="false" />
         <activity android:name=".WirelessAdbActivity" android:screenOrientation="portrait" android:exported="false" />
-        <service
-            android:name=".WorkingBubble"
-            android:exported="false"
-            android:foregroundServiceType="specialUse">
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="显示 AI 工作状态悬浮窗" />
-        </service>
         <!-- ADB 级后台保活（仅在用户开启 ADB 权限时启动） -->
         <service
             android:name=".AdbKeepAliveService"

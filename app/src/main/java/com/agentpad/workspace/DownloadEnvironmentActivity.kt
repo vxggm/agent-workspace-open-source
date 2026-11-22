@@ -134,7 +134,7 @@ class DownloadEnvironmentActivity : ComponentActivity() {
             id = "jre17",
             title = t("jre17"),
             desc = d("jre17"),
-            shareUrl = "https://example.com",
+            shareUrl = "https://share.feijipan.com/s/X5924p0K",
             isInstalled = inst("jre17")
         ) { archive, _ ->
             val rootfs = rootfsDir()
@@ -160,7 +160,7 @@ class DownloadEnvironmentActivity : ComponentActivity() {
             id = "toolchain",
             title = t("toolchain"),
             desc = d("toolchain"),
-            shareUrl = "https://example.com",
+            shareUrl = "https://share.feijipan.com/s/Nc9W0a6g",
             isInstalled = inst("toolchain")
         ) { archive, _ ->
             val rootfs = rootfsDir()
@@ -178,7 +178,7 @@ class DownloadEnvironmentActivity : ComponentActivity() {
             id = "toolchain_patch_v3",
             title = t("toolchain_patch_v3"),
             desc = d("toolchain_patch_v3"),
-            shareUrl = "https://example.com",
+            shareUrl = "https://share.feijipan.com/s/V39sOmm4",
             isInstalled = inst("toolchain_patch_v3")
         ) { archive, _ ->
             val rootfs = rootfsDir()
@@ -194,7 +194,7 @@ class DownloadEnvironmentActivity : ComponentActivity() {
             id = "go_env",
             title = t("go_env"),
             desc = d("go_env"),
-            shareUrl = "https://example.com",
+            shareUrl = "https://share.feijipan.com/s/M3vTmHcw",
             isInstalled = inst("go_env")
         ) { archive, _ ->
             val rootfs = rootfsDir()
@@ -383,7 +383,7 @@ class DownloadEnvironmentActivity : ComponentActivity() {
             id = "ndk",
             title = t("ndk"),
             desc = d("ndk"),
-            shareUrl = "https://example.com",
+            shareUrl = "https://share.feijipan.com/s/DVw1Sb6y",
             isInstalled = inst("ndk")
         ) { archive, _ ->
             val rootfs = rootfsDir()

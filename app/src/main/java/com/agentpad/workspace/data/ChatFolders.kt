@@ -81,8 +81,7 @@ object ChatFolders {
         val key = workspaceKey(context, sessionId)
         val folder = targetId?.let { id -> list(context).find { it.id == id } ?: error("文件夹已移除") }
         val terminalId = com.agentpad.workspace.ai.TerminalService.aiSessionId(sessionId)
-        check(!com.agentpad.workspace.WorkingBubble.isShowing(sessionId) &&
-            !com.agentpad.workspace.ai.TerminalService.commandRunning(terminalId)) { "请等当前任务结束后再移动对话" }
+        check(!com.agentpad.workspace.ai.TerminalService.commandRunning(terminalId)) { "请等当前任务结束后再移动对话" }
         val editor = prefs(context).edit()
         if (folder == null) {
             // Ungrouping keeps the same workspace, just like Operit's independent group/workspace fields.

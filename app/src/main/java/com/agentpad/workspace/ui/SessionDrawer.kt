@@ -120,7 +120,7 @@ fun SessionDrawerContent(currentId: String, onOpen: (ChatStore.Session) -> Unit,
                     Checkbox(alsoWorkspace, { alsoWorkspace = it }); Text("同时删除独立工作区")
                 }
             } }, confirmButton = { TextButton(onClick = {
-                if (WorkingBubble.isShowing(item.id) || com.agentpad.workspace.floating.FloatingSessionHub.isBusy(item.id)) {
+                if (com.agentpad.workspace.floating.FloatingSessionHub.isBusy(item.id)) {
                     error = "请等当前任务结束后再删除"
                 } else {
                     val workspace = ChatStore.workspaceDir(context, item.id)

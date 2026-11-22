@@ -13,8 +13,8 @@
 
 ## 问题与讨论
 
-- [Issues](https://github.com/vxggm/agent-workspace-open-source/issues)：问题反馈、功能建议。
-- [Discussions](https://github.com/vxggm/agent-workspace-open-source/discussions)：交流、提问、分享。
+- [Issues](https://example.com)：问题反馈、功能建议。
+- [Discussions](https://example.com)：交流、提问、分享。
 
 ## 权限与发版
 

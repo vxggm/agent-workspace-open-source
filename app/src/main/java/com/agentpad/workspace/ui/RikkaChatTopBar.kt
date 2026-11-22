@@ -24,6 +24,11 @@
 
 package com.agentpad.workspace.ui
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.viewinterop.AndroidView
+import android.widget.ImageButton
+import com.agentpad.workspace.R
 import androidx.compose.foundation.layout.Row
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.Column
@@ -89,9 +94,40 @@ fun RikkaChatTopBar(
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
         navigationIcon = {
             // 左侧：返回箭头（原版这里是菜单，按主人要求换回返回）
-            IconButton(onClick = onBack) {
-                Icon(if (legacyUi) Icons.AutoMirrored.Outlined.ArrowBack else Icons.Outlined.Menu,
-                    if (legacyUi) "返回" else "会话列表")
+            if (legacyUi) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, "返回")
+                }
+            } else {
+                // Only the opener is a platform View; drawer content and navigation stay unchanged.
+                val tint = MaterialTheme.colorScheme.onSurfaceVariant.toArgb()
+                val ripple = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .12f).toArgb()
+                val density = androidx.compose.ui.platform.LocalDensity.current.density
+                AndroidView(
+                    modifier = Modifier.size(48.dp),
+                    factory = { context ->
+                        ImageButton(context).apply {
+                            minimumWidth = 0
+                            minimumHeight = 0
+                            isFocusableInTouchMode = false
+                            contentDescription = "会话列表"
+                            scaleType = android.widget.ImageView.ScaleType.CENTER_INSIDE
+                            val inset = (12f * density + .5f).toInt()
+                            setPadding(inset, inset, inset, inset)
+                            setImageResource(R.drawable.ic_session_drawer_menu)
+                        }
+                    },
+                    update = { button ->
+                        button.imageTintList = android.content.res.ColorStateList.valueOf(tint)
+                        val mask = android.graphics.drawable.GradientDrawable().apply {
+                            shape = android.graphics.drawable.GradientDrawable.OVAL
+                            setColor(android.graphics.Color.WHITE)
+                        }
+                        button.background = android.graphics.drawable.RippleDrawable(
+                            android.content.res.ColorStateList.valueOf(ripple), null, mask)
+                        button.setOnClickListener { onBack() }
+                    },
+                )
             }
         },
         title = {

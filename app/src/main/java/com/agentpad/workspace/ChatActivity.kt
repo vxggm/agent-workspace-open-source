@@ -50,6 +50,9 @@ class ChatActivity : ComponentActivity(), com.agentpad.workspace.ai.BrowserSlotP
         syncSessionFromStore()
         userPagedBack = false
         windowStartIndex = -1
+        // 小窗发完立刻推一次快照：用户在胶囊里看到自己刚发的那句，
+        // 不用等主界面下一帧刷新（两边共用同一个 ChatStore）。
+        runCatching { com.agentpad.workspace.floating.FloatingSessionHub.refresh(this, session.id, true) }
         return startTurn() != null
     }
     override fun floatingStop() { abortActiveRequests() }
@@ -306,6 +309,14 @@ class ChatActivity : ComponentActivity(), com.agentpad.workspace.ai.BrowserSlotP
     private val RETRY_DELAYS_MS = longArrayOf(1_000L, 2_000L, 4_000L, 8_000L, 8_000L)
     /** 流式刷新最小间隔（毫秒）。100ms 约等于 10fps，肉眼已足够顺滑。 */
     private val STREAM_REFRESH_MS = 100L
+    /**
+     * 工具轮安全阈值（不是「限制」，是兜底）。
+     *
+     * 旧值是硬性 48 轮，跑长任务（建站、批量编译、逆向扫描）会被误杀。
+     * 现在放到 400 轮：正常任务根本到不了；真到这一步说明模型在自我循环。
+     * 想完全放开就把这里调大，副作用只有内存与 token 账单。
+     */
+    private val MAX_TOOL_ROUNDS_SAFETY = 400
     /** 本轮（一个 assistant turn）是否调用过工具。收尾时据此判断"AI 还在干活中"。 */
     // 工具调用由当前 agentic loop 直接驱动，不用于结束后自动补发。
 
@@ -369,7 +380,6 @@ class ChatActivity : ComponentActivity(), com.agentpad.workspace.ai.BrowserSlotP
             busy = false
             setBusyUi(false)
             roundStats = null
-            runCatching { WorkingBubble.stopIfShowing(this, session.id) }
             refreshComposeMessages()
         }
     }
@@ -770,6 +780,7 @@ class ChatActivity : ComponentActivity(), com.agentpad.workspace.ai.BrowserSlotP
                                 )
                             },
                             onInstallApk = { showWorkspaceApkPicker() },
+                            onClearChat = { confirmClearChatHistory() },
                             onOpenFloating = { openFloatingChat() },
                         ),
                         onBackFromPlan = { sidebarPlanView.value = false },
@@ -1027,6 +1038,48 @@ class ChatActivity : ComponentActivity(), com.agentpad.workspace.ai.BrowserSlotP
     }
 
     /**
+     * 清除聊天记录（只清消息）。
+     *
+     * 语义边界：会话本身（id、标题、模式、文件夹归属）、工作区文件、文件操作历史、
+     * 终端 PTY 全部保留。清掉的只有 message 列表 + 为该列表服务的派生态
+     * （上下文压缩摘要、任务规划），否则清空后还会用旧摘要去请求。
+     */
+    private fun confirmClearChatHistory() {
+        closeSidebar()
+        android.app.AlertDialog.Builder(this)
+            .setTitle("清除聊天记录")
+            .setMessage("只清空本会话的消息记录。\n会话本身、标题、工作区文件都不会删除。")
+            .setNegativeButton("取消", null)
+            .setPositiveButton("清除") { _, _ -> clearChatHistory() }
+            .show()
+    }
+
+    private fun clearChatHistory() {
+        if (busy) {
+            toastShort("正在执行任务，先停止再清除")
+            return
+        }
+        val ok = ChatStore.clearMessages(this, session.id)
+        if (!ok) {
+            toastShort("清除失败，会话不存在")
+            return
+        }
+        ChatStore.clearContextCompression(this, session.id)
+        com.agentpad.workspace.ai.PlanStore.clear(this, session.id)
+        session = ChatStore.loadSession(this, session.id) ?: session
+        // 重新锚定显示窗口，否则旧的分页起点会指向已经不存在的下标
+        windowStartIndex = -1
+        userPagedBack = false
+        lastWindowCalcSize = -1
+        composeHasOlder.value = false
+        runOnUiThread {
+            refreshComposeMessages()
+            refreshPlanPanel()
+        }
+        Toast.makeText(this, "已清除聊天记录，工作区保留", Toast.LENGTH_SHORT).show()
+    }
+
+    /**
      * 刷新侧边栏数据。
      *
      * 旧版这里是「removeAllViews() + 重建全部原生 View」，每个工具步骤都会跑一次，
@@ -1084,7 +1137,6 @@ class ChatActivity : ComponentActivity(), com.agentpad.workspace.ai.BrowserSlotP
             return
         }
         videoRendering = true
-        runCatching { WorkingBubble.start(this, session.id) }
         Toast.makeText(this, "开始渲染视频…", Toast.LENGTH_SHORT).show()
         Thread {
             val runner = com.agentpad.workspace.ai.SandboxRunner(
@@ -1104,7 +1156,6 @@ class ChatActivity : ComponentActivity(), com.agentpad.workspace.ai.BrowserSlotP
             }.getOrElse { com.agentpad.workspace.ai.TerminalOutput(-1, "", it.message ?: "渲染失败") }
             val ok = out.exitCode == 0 && java.io.File(sessionWorkspace, "out.mp4").exists()
             videoRendering = false
-            runCatching { WorkingBubble.stopIfShowing(this, session.id) }
             runOnUiThread {
                 if (ok) {
                     val size = java.io.File(sessionWorkspace, "out.mp4").length()
@@ -1323,7 +1374,6 @@ private fun send(): String? {
         // Regeneration follows the standard single-turn agent loop.
         setBusyUi(true)
         roundStats = RoundStats()
-        runCatching { WorkingBubble.start(this, session.id) }
         runOnUiThread { refreshComposeMessages() }
         Thread { request(assistantTurnId) }.start()
         return assistantTurnId
@@ -1370,7 +1420,6 @@ private fun send(): String? {
         // Regeneration starts a fresh single assistant turn.
         setBusyUi(true)
         roundStats = RoundStats()
-        runCatching { WorkingBubble.start(this, session.id) }
         runOnUiThread { refreshComposeMessages() }
         // 2) 同一个 message id 起请求：流式内容会写回这条消息本体。
         //    同时把该 id 当作历史截断点 —— 只发它之前的消息（ChatService.kt:596-599）。
@@ -1495,8 +1544,15 @@ private fun send(): String? {
             while (true) {
                 if (abortRequested) return
                 roundNo++
-                if (roundNo == 49) {
-                    failTurn(turnId, generation, IllegalStateException("工具调用连续 48 轮仍未收敛，已自动停止（防死循环 / 内存膨胀）。"))
+                // 轮数不再硬性封顶：只做「无进展」判定。
+                // 工具轮本来就可能是几百轮的长任务（建站、批量编译、逆向扫描），
+                // 按固定 48 轮砍掉会误杀正常干活。这里改成：
+                //   - 连续 MAX_NO_PROGRESS_ROUNDS 轮都是同一批工具、同样参数、无新增文本 → 才判定卡死；
+                //   - 任何一轮产出新文本/新工具/参数变化，计数立刻清零。
+                // 用户随时可以点停止，所以不需要一个死的轮数上限。
+                if (roundNo > MAX_TOOL_ROUNDS_SAFETY) {
+                    failTurn(turnId, generation, IllegalStateException(
+                        "工具调用已超过 $MAX_TOOL_ROUNDS_SAFETY 轮（安全阈值），已停止。如需继续请再发一条。"))
                     return
                 }
                 // This round finished: fold its live tail into the committed
@@ -1844,7 +1900,6 @@ private fun send(): String? {
         }
         refreshComposeMessages()
         runCatching { refreshPlanPanel() }
-        runCatching { WorkingBubble.stopIfShowing(this, session.id) }
         // 收尾后副标题恢复模型名（重试提示是临时占位）。
         runCatching { refreshTopBarSubtitle() }
         // ⚠ 失败**不再自动补「继续」**：那会往历史里塞用户消息，同样属于污染上下文。
@@ -2055,7 +2110,6 @@ private fun send(): String? {
         roundStats = null
         busy = false
         setBusyUi(false)
-        runCatching { WorkingBubble.stopIfShowing(this, session.id) }
         refreshComposeMessages()
         runCatching { refreshPlanPanel() }
         runCatching { maybeAutoTitle() }
@@ -2815,6 +2869,9 @@ private fun streamedToolLineStats(name: String, rawArguments: String): Pair<Int,
     private var lastWindowCalcSize = -1
 
     private fun refreshComposeMessages() {
+        // 小窗与主界面共用同一个 ChatStore，这里是唯一的「已变更」出口：
+        // 每次主界面刷新都顺手把小窗快照推一次（hub 内部 300ms 节流 + IO 线程读），
+        // 所以两边永远看到同一份消息，不存在谁先谁后。
         if (::session.isInitialized && com.agentpad.workspace.floating.FloatingSessionHub.showing) {
             com.agentpad.workspace.floating.FloatingSessionHub.refresh(this, session.id)
         }
@@ -3165,6 +3222,14 @@ private fun streamedToolLineStats(name: String, rawArguments: String): Pair<Int,
                 streamRefreshDirtyWhileBackground = false
                 lastStreamRefreshAt = android.os.SystemClock.uptimeMillis()
                 runCatching { refreshComposeMessages() }
+                // ★ 补刷新只补一帧是不够的：本轮还在跑时必须重新挂上节流器，
+                //   否则请求线程把脏标记又置上，而没人把它消费掉 →
+                //   表现就是「回来了但完全不流式刷新，像断流」。
+                if (busy && !streamRefreshPending) {
+                    streamRefreshHandler.removeCallbacks(streamRefreshRunnable)
+                    streamRefreshHandler.postDelayed(streamRefreshRunnable, STREAM_REFRESH_MS)
+                    streamRefreshPending = true
+                }
             }
         }
     }

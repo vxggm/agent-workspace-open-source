@@ -43,9 +43,9 @@ object DshService {
      * 实测：435MB 的分享**不需要登录转存**，file/redirect 直接 302 给直链 —— 
      * FeijipanParser 里"大文件(>300MB)需登录转存"的旧注释已作废。
      */
-    const val BUNDLE_URL = "https://example.com"
+    const val BUNDLE_URL = "https://share.feijipan.com/s/Umy8a0AT"
     const val BUNDLE_SHA256 = "cefc9de44130d14e4f025c3223aac608ce15a94379218bad13602da424bfc818"
-    const val BUNDLE_URL2 = "https://example.com"
+    const val BUNDLE_URL2 = "https://share.feijipan.com/s/s5y8bA7D"
     const val BUNDLE_SHA2562 = "962bba91e1b4b3ab59c0ed50ca35818b681c81ed6a424d0b9d19f92a0619b28e"
 
     /** V8 编译缓存目录（guest 内）：node 二次启动明显更快 */
@@ -321,7 +321,7 @@ object DshService {
 
     /**
      * 下载一包。src 可以是：
-     *   - 小飞机分享链接 https://example.com → FeijipanParser 解析成直链
+     *   - 小飞机分享链接 https://share.feijipan.com/s/xxx → FeijipanParser 解析成直链
      *   - 任何直链 http(s)://...
      * 直链带时间戳会过期，所以每次安装都重新解析。
      */

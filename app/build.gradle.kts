@@ -4,6 +4,8 @@ import java.io.FileInputStream
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
+    // 照搬 RikkaHub 3.2.0 ai 模块需要的序列化插件
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 // 签名配置：从 local.properties 读取，不把密码写进版本库。
@@ -51,8 +53,8 @@ val versionCodeOverride = (project.findProperty("app.versionCode") as String?)?.
 val versionNameOverride = project.findProperty("app.versionName") as String?
 
 /** 当前发布版本。改这里 = 发新版。 */
-val APP_VERSION_CODE = 66
-val APP_VERSION_NAME = "5.2.2-open-source"
+val APP_VERSION_CODE = 87
+val APP_VERSION_NAME = "5.4.5-open-source"
 
 android {
     // 4.7 换包名：com.agentpad.newapp -> com.agentpad.workspace
@@ -181,6 +183,52 @@ dependencies {
     // appcompat was removed — it dragged in fragment/lifecycle/coroutines
     // (~6MB of dex) for nothing; activities extend plain android.app.Activity.
     implementation("androidx.core:core-ktx:1.13.1")
+    // ============================================================
+    // kotlinx.serialization —— 照搬 RikkaHub 3.2.0 ai 模块所需（2026-11-22 追加）
+    //
+    // 为什么必须加：RikkaHub 的 ai 模块（StreamChunk / ProviderSetting / UIMessage /
+    // Tool 等）全部用 @Serializable + JsonObject/JsonPrimitive 建模。
+    // 要「照搬」而不是「魔改成 org.json」，就必须有这套运行库 + 编译插件。
+    //
+    // 版本与 RikkaHub 3.2.0 的 libs.versions.toml:29 一致（1.12.0），
+    // 其 Kotlin 是 2.4.21，与我们完全相同，无版本冲突。
+    // 体积约 600KB（json + core），纯 Kotlin 无原生库。
+    // ============================================================
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.12.0")
+    // ============================================================
+    // 照搬 RikkaHub 3.2.0 ai 模块所需的其余依赖（2026-11-22）
+    //
+    // 依据：对 ai/ + common/ 源码做 import 统计，实际用到的是
+    //   okhttp3（含 sse / logging）、kotlinx.coroutines（flow/channels）、
+    //   kotlinx.datetime。版本一律对齐 RikkaHub 的 libs.versions.toml：
+    //   okhttp=5.x、coroutines=1.11.0、datetime=0.8.0。
+    //
+    // 为什么必须用 okhttp 而不是继续 HttpURLConnection：
+    //   参考的 SSE 实现走 okhttp-sse 的 EventSource（RealEventSource /
+    //   ServerSentEventReader），换成手写流会丢掉重连、事件边界等语义，
+    //   就等于又在「魔改」而不是「照搬」。
+    // ============================================================
+    implementation("com.squareup.okhttp3:okhttp:5.2.1")
+    implementation("com.squareup.okhttp3:okhttp-sse:5.2.1")
+    implementation("com.squareup.okhttp3:logging-interceptor:5.2.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
+    // ============================================================
+    // 照搬 ai/common 后，编译报错指出还缺这两个（2026-11-22 第二轮）
+    //
+    // 报错原文（第一轮）：
+    //   GoogleProvider.kt:80:19  Unresolved reference 'commons'
+    //   GoogleProvider.kt:118:33 Unresolved reference 'StringEscapeUtils'
+    //
+    // 版本取自参考源码 libs.versions.toml:11：commons-text = "1.15.0"
+    //
+    // ⚠ quickjs-kt 没加：它只被 common/js/QuickJSFetch.kt 使用，
+    //   而该文件在 ai 模块里没有任何引用（已实测 grep 0 命中）。
+    //   引它会带进 2MB 原生库（libquickjs.so，全 ABI 要 ~6MB），
+    //   对「工具解析」毫无贡献，故直接删掉该文件、不引依赖。
+    // ============================================================
+    implementation("org.apache.commons:commons-text:1.15.0")
     implementation("androidx.activity:activity-ktx:1.9.2")
     implementation("androidx.activity:activity-compose:1.9.2")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.3")
